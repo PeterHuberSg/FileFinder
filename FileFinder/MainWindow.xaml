@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:FileFinder"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="Find string in directories" Height="450" Width="800" WindowState="Maximized">
     <Grid>
     <Grid.ColumnDefinitions>
       <ColumnDefinition Width="auto"/>
@@ -16,9 +16,10 @@
       <RowDefinition Height="auto"/>
       <RowDefinition Height="auto"/>
       <RowDefinition Height="auto"/>
+      <RowDefinition Height="auto"/>
       <RowDefinition/>
     </Grid.RowDefinitions>
-    <Rectangle Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Grid.RowSpan="3" Fill="Gainsboro"/>
+    <Rectangle Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Grid.RowSpan="5" Fill="LightGray"/>
     <Label Grid.Row="0" Grid.Column="0" Content="Directory" VerticalAlignment="Center"/>
     <TextBox Grid.Row="0" Grid.Column="1" x:Name="DirectoryTextBox" Margin="2"/>
     <Label Grid.Row="1" Grid.Column="0" Content="Search Text" VerticalAlignment="Center"/>
@@ -26,7 +27,9 @@
     <Label Grid.Row="2" Grid.Column="0" Content="Required File Extensions" VerticalAlignment="Center"/>
     <TextBox Grid.Row="2" Grid.Column="1" x:Name="FilterTextBox" Margin="2"/>
     <Button Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" x:Name="SearchButton" Content="_Search" Margin="2"/>
-    <TextBox Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" x:Name="ResultTextBox" AcceptsReturn="True"
+    <TextBox Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" x:Name="StatusTextBox" Margin="2" IsReadOnly="True"
+             Visibility="Collapsed"/>
+    <TextBox Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" x:Name="ResultTextBox" AcceptsReturn="True"
              HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Visible"/>
   </Grid>
 </Window>

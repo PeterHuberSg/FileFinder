@@ -41,9 +41,11 @@ namespace FileFinder {
       //SearchTextBox.Text = "BigBitSet";
       //SearchTextBox.Text = "Generic";
       //SearchTextBox.Text = "testMethodOverFlow"; 
-      SearchTextBox.Text = "Environment.GetFolderPath";
-      SearchTextBox.Text = "CustomControlBase";
+      //SearchTextBox.Text = "Environment.GetFolderPath";
+      //SearchTextBox.Text = "CustomControlBase";
+      SearchTextBox.Text = "TestBench";
       
+
 
 
 
@@ -52,9 +54,6 @@ namespace FileFinder {
       SearchButton.Click += searchButton_Click;
       ResultTextBox.MouseDoubleClick += ResultTextBox_MouseDoubleClick;
     }
-
-
-    const string linePreamble = " >==";
 
 
     private void ResultTextBox_MouseDoubleClick(object sender, MouseButtonEventArgs e) {
@@ -147,10 +146,17 @@ namespace FileFinder {
         if (!rootDirectory.Exists) {
           ResultTextBox.Text += $"Error: cannot find directory: {searchPath}." + Environment.NewLine;
         } else {
-          var progress = new Progress<string>(s =>
+          var progress = new Progress<(string text, string? status)>(s =>
           {
-            ResultTextBox.Text =  s;
+            ResultTextBox.Text +=  s.text;
             ResultTextBox.ScrollToEnd();
+            if (s.status is null) {
+              StatusTextBox.Text = "";
+              StatusTextBox.Visibility = Visibility.Collapsed;
+            } else {
+              StatusTextBox.Text = s.status;
+              StatusTextBox.Visibility = Visibility.Visible;
+            }
           });
           await Task.Run(() => searchRootDirectory(rootDirectory, progress));
         }
@@ -161,14 +167,14 @@ namespace FileFinder {
     }
 
 
-    IProgress<string>? progress;
+    IProgress<(string text, string? status)>? progress;
 
 
-    private void searchRootDirectory(DirectoryInfo directory, IProgress<string> progress) {
+    private void searchRootDirectory(DirectoryInfo directory, IProgress<(string text, string? status)> progress) {
       this.progress = progress;
       startReport();
-      report($"Search string '{searchString}' using filter '{filterString}' in directory : {directory.FullName}" +
-        Environment.NewLine, true);
+      stringBuilder.AppendLine($"Search string '{searchString}' using filter '{filterString}' in directory:" +
+        $" {directory.FullName}" +Environment.NewLine);
 
       searchDirectory(directory);
       finalReport();
@@ -179,7 +185,7 @@ namespace FileFinder {
       if (directory.FullName.Contains("filefinder", StringComparison.InvariantCultureIgnoreCase)) {
         return true;
       }
-      report(directory.FullName);
+      reportProgress(directory.FullName);
       try {
         foreach (FileInfo file in directory.GetFiles()) {
           if (isCancelled) {
@@ -209,7 +215,7 @@ namespace FileFinder {
               if (readByte==searchBytes[searchByteIndex]) {
                 searchByteIndex++;
                 if (searchByteIndex>=searchBytes.Length) {
-                  report($"==> {file.FullName}: {fileStream.Position}", true);
+                  stringBuilder.AppendLine($"==> {file.FullName}: {fileStream.Position}");
                   //Thread.Sleep(10);
                   break;
                 }
@@ -218,11 +224,11 @@ namespace FileFinder {
               }
             }
           } catch (Exception ex) {
-            report($"Cannot read file {file.Name}, Exception: {ex.Message}", true);
+            stringBuilder.AppendLine($"Cannot read file {file.Name}, Exception: {ex.Message}");
           }
         }
       } catch (Exception ex) {
-        report($"Cannot access files in directory {directory.Name}, Exception: {ex.Message}", true);
+        stringBuilder.AppendLine($"Cannot access files in directory {directory.Name}, Exception: {ex.Message}");
       }
 
       try {
@@ -235,47 +241,37 @@ namespace FileFinder {
           if (!searchDirectory(childDirectory)) return false;
         }
       } catch (Exception ex) {
-        report($"Cannot access directories in directory {directory.Name}, Exception: {ex.Message}, true");
+        stringBuilder.AppendLine($"Cannot access directories in directory {directory.Name}, Exception: {ex.Message}");
       }
       return true;
     }
 
 
-    string tempLine = "";
-    readonly StringBuilder stringBuilder = new StringBuilder();
-    Stopwatch watch = new Stopwatch();
-    long lastTick = 0;
+    readonly StringBuilder stringBuilder = new();
+    readonly Stopwatch watch = new ();
+    long nextTick;
     readonly long waitPeriod = Stopwatch.Frequency / 2;
 
 
     private void startReport() {
-      lastTick = 0;
+      nextTick = 0;
       watch.Start();
     }
 
 
-    private void report(string text, bool isNewLine = false) {
-      if (isNewLine) {
-        stringBuilder.AppendLine(text);
-      } else {
-        tempLine = text;
-      }
+    private void reportProgress(string text) {
+      if (watch.ElapsedTicks<nextTick) return;
 
-      if (watch.ElapsedTicks>lastTick + waitPeriod) {
-        lastTick += waitPeriod;
-        if (tempLine.Length>0) {
-          progress!.Report(stringBuilder.ToString() + Environment.NewLine + tempLine);
-        } else {
-          progress!.Report(stringBuilder.ToString());
-        }
-      }
+      nextTick = watch.ElapsedTicks + waitPeriod;
+      progress!.Report((stringBuilder.ToString(), text));
+      stringBuilder.Clear();
     }
 
 
     private void finalReport() {
-      progress!.Report(stringBuilder.ToString());
-      stringBuilder.Clear();
       watch.Stop();
+      progress!.Report((stringBuilder.ToString(), null));
+      stringBuilder.Clear();
     }
   }
 }
